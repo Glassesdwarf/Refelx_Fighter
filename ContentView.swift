@@ -12,6 +12,9 @@ class GameState: ObservableObject {
     // Enemy attack direction
     @Published var currentAttack = "⬆️"
     
+    // Feint attack
+    @Published var isFeint = false
+    
     // Message
     @Published var message = "Get Ready!"
     
@@ -45,6 +48,46 @@ class GameState: ObservableObject {
     // Directions
     let directions = ["⬆️","⬇️","⬅️","➡️"]
     
+    // MARK: - OPPOSITE DIRECTION
+    
+    func oppositeDirection(of direction: String) -> String {
+        
+        switch direction {
+        case "⬆️":
+            return "⬇️"
+        case "⬇️":
+            return "⬆️"
+        case "⬅️":
+            return "➡️"
+        case "➡️":
+            return "⬅️"
+        default:
+            return direction
+        }
+    }
+    
+    // MARK: - FEINT SYMBOLS
+    
+    func displayAttackSymbol() -> String {
+        
+        if !isFeint {
+            return currentAttack
+        }
+        
+        switch currentAttack {
+        case "⬆️":
+            return "🔺"
+        case "⬇️":
+            return "🔻"
+        case "⬅️":
+            return "◀️"
+        case "➡️":
+            return "▶️"
+        default:
+            return currentAttack
+        }
+    }
+    
     // MARK: - SOUND
     
     func playSound(name: String) {
@@ -77,7 +120,14 @@ class GameState: ObservableObject {
         
         currentAttack = directions.randomElement()!
         
-        message = "Enemy attacks \(currentAttack)"
+        // 25% chance feint
+        isFeint = Bool.random() && Bool.random()
+        
+        if isFeint {
+            message = "FEINT ATTACK!"
+        } else {
+            message = "Enemy attacks \(currentAttack)"
+        }
         
         playSound(name: "enemy_attack_sound")
         
@@ -129,14 +179,24 @@ class GameState: ObservableObject {
         guard !inAttackPhase else { return }
         guard !gameOver else { return }
         
-        // Correct dodge
-        if input == currentAttack {
-            
-            dodgeTimer?.invalidate()
+        dodgeTimer?.invalidate()
+        
+        // Determine correct answer
+        let correctDirection =
+            isFeint
+            ? oppositeDirection(of: currentAttack)
+            : currentAttack
+        
+        // Correct input
+        if input == correctDirection {
             
             combo += 1
             
-            message = "Perfect Dodge! Combo: \(combo)"
+            if isFeint {
+                message = "FEINT READ!"
+            } else {
+                message = "Perfect Dodge!"
+            }
             
             // Start attack phase
             if combo >= 3 {
@@ -151,8 +211,6 @@ class GameState: ObservableObject {
         } else {
             
             // Wrong dodge
-            dodgeTimer?.invalidate()
-            
             playerHP -= 10
             
             combo = 0
@@ -265,6 +323,8 @@ class GameState: ObservableObject {
         
         gameOver = false
         
+        isFeint = false
+        
         message = "Get Ready!"
         
         attackTimer?.invalidate()
@@ -354,9 +414,17 @@ struct ContentView: View {
                             .offset(x: game.enemyShake ? 10 : -10)
                             .animation(.easeInOut(duration: 0.1), value: game.enemyShake)
                         
-                        // Direction
-                        Text(game.currentAttack)
+                        // Attack Symbol
+                        Text(game.displayAttackSymbol())
                             .font(.system(size: 80))
+                            .foregroundColor(game.isFeint ? .purple : .white)
+                        
+                        // Feint Text
+                        if game.isFeint {
+                            Text("FEINT! Press opposite direction!")
+                                .foregroundColor(.purple)
+                                .bold()
+                        }
                         
                         Text("Tap matching direction!")
                             .foregroundColor(.gray)
