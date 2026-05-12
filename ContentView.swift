@@ -517,21 +517,43 @@ struct ContentView: View {
                 // MARK: - GAME OVER
                 
                 if game.gameOver {
-                    
-                    Button(action: {
-                        game.restartGame()
-                    }) {
-                        
-                        Text("Restart Game")
-                            .font(.title2)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(20)
-                    }
-                    .padding(.horizontal, 40)
-                }
+    
+    VStack(spacing: 20) {
+        
+        // Victory Image
+        if game.enemyHP <= 0 {
+            
+            Image("Victory_Image")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 300, height: 300)
+        }
+        
+        // Lose Image
+        if game.playerHP <= 0 {
+            
+            Image("Lose_Image")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 300, height: 300)
+        }
+        
+        // Restart Button
+        Button(action: {
+            game.restartGame()
+        }) {
+            
+            Text("Restart Game")
+                .font(.title2)
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(20)
+        }
+        .padding(.horizontal, 40)
+    }
+}
                 
                 Spacer()
             }
